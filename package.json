@@ -1,0 +1,14 @@
+{
+  "name": "employee-portal",
+  "version": "1.0.0",
+  "description": "Employee Portal - Node.js app backed by PostgreSQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node --check server.js && echo Build OK"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

@@ -152,8 +152,9 @@
       </section>
 
       <section id="employees" class="section">
-        <h3>Team Members</h3>
-        <div class="employee-list">
+        <h3>Team Members <span id="db-status" class="status pending">Checking database…</span></h3>
+        <p id="served-by" class="role" style="margin-bottom:12px;color:var(--muted);font-size:13px"></p>
+        <div class="employee-list" id="employee-list">
           <div class="employee">
             <div class="info">
               <div class="avatar">PS</div>
@@ -199,6 +200,33 @@
 
 <script>
   document.getElementById('year').textContent=new Date().getFullYear();
+
+  // Load live data from the backend (PostgreSQL). Falls back to the static list above if the API is unreachable.
+  (async function(){
+    const badge=document.getElementById('db-status');
+    const servedBy=document.getElementById('served-by');
+    try{
+      const health=await (await fetch('/api/health')).json();
+      if(health.db!=='connected') throw new Error(health.error||'DB disconnected');
+      badge.className='status approved';
+      badge.textContent='PostgreSQL connected';
+      servedBy.textContent='Served by app container '+health.server+' · database "'+health.database+'" on '+health.dbHost;
+
+      const employees=await (await fetch('/api/employees')).json();
+      const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      document.getElementById('employee-list').innerHTML=employees.map(e=>{
+        const initials=e.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+        const cls=e.status==='Online'?'approved':'pending';
+        return '<div class="employee"><div class="info"><div class="avatar">'+esc(initials)+'</div><div>'+
+               '<div><strong>'+esc(e.name)+'</strong></div><div class="role">'+esc(e.role)+' · '+esc(e.department)+'</div>'+
+               '</div></div><span class="status '+cls+'">'+esc(e.status)+'</span></div>';
+      }).join('');
+    }catch(err){
+      badge.className='status rejected';
+      badge.textContent='Database not connected';
+      servedBy.textContent=err.message;
+    }
+  })();
 </script>
 </body>
 </html>
